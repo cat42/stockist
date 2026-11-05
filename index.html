@@ -1,0 +1,895 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#245446">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Stockist">
+<title>Stockist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: single column phone tool, sticky header, fixed bottom tab bar, bottom-sheet dialogs */
+:root{
+  --bg:#EDF1EE; --surface:#FFFFFF; --surface-2:#F5F8F6; --ink:#17201C; --ink-2:#4D5B54; --ink-3:#7A8781;
+  --line:#D2DAD5; --pine:#245446; --pine-2:#1B4337; --on-pine:#FFFFFF; --pine-soft:#DCEAE4;
+  --fur:#B0612A; --fur-dark:#82461C; --paper:#FBFBF6; --board:#6B5035;
+  --ok:#2C7A4D; --ok-soft:#DDF0E3; --soon:#9A6400; --soon-soft:#F7EBCF; --urgent:#C2410C; --urgent-soft:#FBE3D6; --expired:#B42318; --expired-soft:#F8DCDA;
+  --shadow:0 1px 2px rgba(20,40,30,.08),0 4px 14px rgba(20,40,30,.06);
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#121815; --surface:#1A221E; --surface-2:#202A25; --ink:#E6ECE8; --ink-2:#AFBDB6; --ink-3:#7F8E87;
+  --line:#2E3A34; --pine:#3E8A73; --pine-2:#4E9C84; --on-pine:#FFFFFF; --pine-soft:#1F3A31;
+  --fur:#C9783D; --fur-dark:#9A5726; --paper:#EDEDE6; --board:#7A5D3F;
+  --ok:#5FBF86; --ok-soft:#1D3527; --soon:#E0A73A; --soon-soft:#3A2F17; --urgent:#F08A55; --urgent-soft:#3C2418; --expired:#F27367; --expired-soft:#3E1D1B;
+  --shadow:0 1px 2px rgba(0,0,0,.3);
+  color-scheme:dark;
+}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.45 var(--sans);-webkit-text-size-adjust:100%;padding-bottom:calc(72px + env(safe-area-inset-bottom,0px))}
+button,input,select{font:inherit;color:inherit}
+[hidden]{display:none!important}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* header */
+.top{position:sticky;top:0;z-index:20;background:var(--pine);color:var(--on-pine);
+  padding:calc(10px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));
+  display:flex;align-items:center;gap:10px}
+.top svg.mascot{width:38px;height:38px;flex:none;background:var(--paper);border-radius:50%;padding:2px}
+.top h1{margin:0;font-size:20px;font-weight:700;letter-spacing:.01em}
+.top .ver{font:600 11px var(--mono);background:rgba(255,255,255,.16);padding:2px 7px;border-radius:999px}
+.top .spacer{flex:1}
+.iconbtn{background:none;border:0;padding:8px;border-radius:10px;color:inherit;cursor:pointer;display:grid;place-items:center}
+.iconbtn:focus-visible,.btn:focus-visible,.tab:focus-visible{outline:2px solid var(--fur);outline-offset:2px}
+.iconbtn svg{width:22px;height:22px}
+
+main{max-width:640px;margin:0 auto;padding:16px max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px));display:grid;gap:16px}
+section{display:grid;gap:14px}
+h2{margin:4px 0 0;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-2)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:var(--shadow)}
+.muted{color:var(--ink-2)}
+.small{font-size:13px}
+.empty{color:var(--ink-2);text-align:center;padding:22px 12px;border:1.5px dashed var(--line);border-radius:14px}
+
+/* gauges */
+.gauges{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.gauge{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;gap:4px;box-shadow:var(--shadow)}
+.gauge .label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-2)}
+.gauge .big{font:600 34px/1.05 var(--mono);font-variant-numeric:tabular-nums}
+.gauge .big small{font:500 14px var(--sans);color:var(--ink-2);margin-left:4px}
+.gauge .sub{font-size:13px;color:var(--ink-2)}
+.bar{height:6px;border-radius:99px;background:var(--surface-2);overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;background:var(--pine)}
+@media (max-width:360px){.gauges{grid-template-columns:1fr}}
+
+/* chips */
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.chip.ok{background:var(--ok-soft);color:var(--ok)}
+.chip.soon{background:var(--soon-soft);color:var(--soon)}
+.chip.urgent{background:var(--urgent-soft);color:var(--urgent)}
+.chip.expired{background:var(--expired-soft);color:var(--expired)}
+.chip.none{background:var(--surface-2);color:var(--ink-3)}
+
+/* lists */
+.list{display:grid;gap:8px}
+.row{display:flex;align-items:center;gap:10px;min-width:0}
+.row .grow{flex:1;min-width:0}
+.row .name{font-weight:600;overflow-wrap:anywhere}
+.alert-row{padding:10px 12px;border-radius:12px;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--line)}
+.alert-row.expired{border-left-color:var(--expired)}
+.alert-row.urgent{border-left-color:var(--urgent)}
+.alert-row.soon{border-left-color:var(--soon)}
+
+details.item{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+details.item>summary{list-style:none;cursor:pointer;padding:12px 14px;display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center}
+details.item>summary::-webkit-details-marker{display:none}
+details.item .meta{font-size:13px;color:var(--ink-2)}
+details.item .qty{font:600 18px var(--mono);text-align:right}
+details.item .inner{border-top:1px solid var(--line);padding:10px 14px 12px;display:grid;gap:8px}
+.batch{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.batch .when{flex:1;min-width:140px;font-size:14px}
+.stepper{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.stepper button{background:var(--surface-2);border:0;width:36px;height:34px;font-size:18px;cursor:pointer}
+.stepper span{min-width:40px;text-align:center;font:600 15px var(--mono)}
+
+/* buttons, inputs */
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:11px;padding:10px 14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px}
+.btn.primary{background:var(--pine);border-color:var(--pine);color:var(--on-pine)}
+.btn.danger{color:var(--expired);border-color:var(--expired-soft)}
+.btn.small{min-height:34px;padding:6px 10px;font-size:13px}
+.btn.ghost{background:none;border-color:transparent;color:var(--pine-2)}
+.btn:disabled{opacity:.5}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap}
+.btnrow .btn{flex:1}
+label.f{display:grid;gap:4px;font-size:13px;font-weight:600;color:var(--ink-2)}
+input[type=text],input[type=number],input[type=date],input[type=search],select{width:100%;min-height:44px;padding:9px 11px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);font-size:16px}
+input:focus,select:focus{outline:2px solid var(--pine);outline-offset:0;border-color:var(--pine)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.quick{display:flex;gap:6px;flex-wrap:wrap}
+.quick button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:4px 10px;font-size:13px;cursor:pointer}
+
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:4px;gap:4px}
+.seg button{border:0;background:none;border-radius:9px;padding:10px;font-weight:600;cursor:pointer;color:var(--ink-2)}
+.seg button[aria-pressed=true]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.seg.out button[aria-pressed=true]{background:var(--fur);color:#fff}
+
+#reader{width:100%;border-radius:14px;overflow:hidden;background:#000;min-height:0}
+#reader video{width:100%!important;display:block}
+.scanhint{font-size:13px;color:var(--ink-2);text-align:center}
+
+/* tab bar */
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--surface);border-top:1px solid var(--line);
+  display:grid;grid-template-columns:repeat(5,1fr);
+  padding:6px max(6px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(6px,env(safe-area-inset-left,0px))}
+.tab{background:none;border:0;display:grid;justify-items:center;gap:2px;padding:6px 2px;font-size:11px;font-weight:600;color:var(--ink-3);cursor:pointer;border-radius:10px}
+.tab svg{width:24px;height:24px}
+.tab[aria-current=page]{color:var(--pine-2)}
+.tab.scan svg{width:28px;height:28px}
+
+/* sheet */
+dialog.sheet{border:0;padding:0;margin:auto auto 0;width:100%;max-width:640px;max-height:92vh;border-radius:18px 18px 0 0;background:var(--surface);color:var(--ink)}
+dialog.sheet::backdrop{background:rgba(10,20,15,.5)}
+@media (min-width:700px){dialog.sheet{margin:auto;border-radius:18px}}
+.sheet form,.sheet .body{padding:18px max(16px,env(safe-area-inset-right,0px)) calc(18px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:grid;gap:12px}
+.sheet h3{margin:0;font-size:19px}
+.sheet .code{font:500 13px var(--mono);color:var(--ink-3)}
+.note{font-size:13px;padding:8px 10px;border-radius:10px;background:var(--surface-2);color:var(--ink-2)}
+.note.warn{background:var(--soon-soft);color:var(--soon)}
+.calc{font:600 14px var(--mono);color:var(--pine-2)}
+fieldset{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:0;display:grid;gap:10px}
+legend{font-size:13px;font-weight:600;color:var(--ink-2);padding:0 4px}
+
+/* toast */
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:50;
+  background:var(--ink);color:var(--bg);border-radius:12px;padding:10px 14px;display:flex;gap:12px;align-items:center;max-width:calc(100% - 32px);box-shadow:var(--shadow);font-size:14px}
+#toast button{background:none;border:0;color:var(--fur);font-weight:700;cursor:pointer;padding:4px}
+@media (prefers-reduced-motion:no-preference){#toast{animation:pop .18s ease-out}@keyframes pop{from{opacity:0;transform:translate(-50%,8px)}}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <svg class="mascot" viewBox="0 0 48 48" aria-hidden="true">
+    <path d="M29 41c10-2 16-10 14-19-2-8-10-11-15-7 5 0 8 4 7 9-1 6-6 9-10 10z" fill="var(--fur-dark)"/>
+    <ellipse cx="23" cy="32" rx="9" ry="11" fill="var(--fur)"/>
+    <circle cx="20" cy="17" r="7" fill="var(--fur)"/>
+    <path d="M16 12.5 17 5.5l4.5 5.5z" fill="var(--fur)"/>
+    <circle cx="17.6" cy="15.8" r="1.25" fill="#17201C"/>
+    <circle cx="13.4" cy="18.4" r="1.05" fill="#17201C"/>
+    <rect x="10" y="25" width="12" height="15" rx="1.6" fill="var(--board)"/>
+    <rect x="11.5" y="27" width="9" height="11.5" fill="var(--paper)"/>
+    <rect x="13.5" y="23.8" width="5" height="3" rx="1" fill="#3A3A34"/>
+    <path d="M13 30.5h5.5M13 33.2h5.5M13 35.9h3.5" stroke="#8A948F" stroke-width="1" stroke-linecap="round"/>
+    <circle cx="21.5" cy="31" r="1.9" fill="var(--fur-dark)"/>
+  </svg>
+  <h1>Stockist</h1>
+  <span class="ver" id="ver"></span>
+  <span class="spacer"></span>
+  <button class="iconbtn" data-action="open-settings" aria-label="Settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+  </button>
+</header>
+
+<main>
+  <section id="view-home"></section>
+
+  <section id="view-scan" hidden>
+    <div class="seg" id="modeSeg">
+      <button type="button" data-mode="in" aria-pressed="true">Add stock</button>
+      <button type="button" data-mode="out" aria-pressed="false">Take out</button>
+    </div>
+    <div id="reader"></div>
+    <div class="btnrow">
+      <button class="btn primary" id="camStart" type="button">Start camera</button>
+      <button class="btn" id="camStop" type="button" hidden>Stop camera</button>
+    </div>
+    <p class="scanhint" id="scanHint">Point the camera at a barcode. A USB scanner can type into the box below.</p>
+    <form class="panel" id="codeForm" autocomplete="off" style="display:grid;gap:10px">
+      <label class="f" for="codeInput">Barcode number</label>
+      <div class="row">
+        <input class="grow num" type="text" inputmode="numeric" id="codeInput" placeholder="e.g. 5000157024671">
+        <button class="btn primary" type="submit">Go</button>
+      </div>
+    </form>
+    <button class="btn" type="button" data-action="add-custom">Add an item without a barcode</button>
+  </section>
+
+  <section id="view-stock" hidden></section>
+  <section id="view-water" hidden></section>
+  <section id="view-people" hidden></section>
+</main>
+
+<nav class="tabs" aria-label="Sections">
+  <button class="tab" data-tab="home" aria-current="page">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11 12 4l9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</button>
+  <button class="tab" data-tab="stock">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/><path d="M6 3v3M18 9v3M10 15v3"/></svg>Stock</button>
+  <button class="tab scan" data-tab="scan">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><path d="M8 8v8M11 8v8M14 8v8M17 8v8" stroke-width="1.5"/></svg>Scan</button>
+  <button class="tab" data-tab="water">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></svg>Water</button>
+  <button class="tab" data-tab="people">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17.5" cy="9.5" r="2.5"/><path d="M16 14.6A5 5 0 0 1 21.5 19"/></svg>Household</button>
+</nav>
+
+<dialog class="sheet" id="sheet"></dialog>
+<div id="toast" hidden></div>
+<input type="file" id="importFile" accept="application/json,.json" hidden>
+
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script>
+"use strict";
+const VERSION = "0.1";
+const KEY = "stockist-data";
+document.getElementById("ver").textContent = "v" + VERSION;
+
+/* ---------- data ---------- */
+function blank(){
+  return { schema:1, members:[], products:{}, batches:[], water:[],
+    settings:{ waterL:3, ration:100, urgentDays:30, soonDays:90 } };
+}
+function normalise(d){
+  const b = blank();
+  if(!d || typeof d !== "object") return b;
+  return {
+    schema:1,
+    members: Array.isArray(d.members) ? d.members : [],
+    products: d.products && typeof d.products === "object" ? d.products : {},
+    batches: Array.isArray(d.batches) ? d.batches : [],
+    water: Array.isArray(d.water) ? d.water : [],
+    settings: Object.assign(b.settings, d.settings || {})
+  };
+}
+function load(){
+  try{ const raw = localStorage.getItem(KEY); if(raw) return normalise(JSON.parse(raw)); }catch(e){}
+  return blank();
+}
+let S = load();
+let persistAsked = false;
+function save(){
+  try{ localStorage.setItem(KEY, JSON.stringify(S)); }
+  catch(e){ toast("Couldn't save. Your browser may be blocking storage."); }
+  if(!persistAsked && navigator.storage && navigator.storage.persist){ persistAsked = true; navigator.storage.persist().catch(()=>{}); }
+}
+
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const num = v => { const n = parseFloat(String(v).replace(",", ".")); return isFinite(n) ? n : null; };
+const fmt = (n, d=0) => n == null ? "–" : n.toLocaleString("en-GB",{maximumFractionDigits:d, minimumFractionDigits:0});
+function todayStart(){ const t = new Date(); t.setHours(0,0,0,0); return t; }
+function daysUntil(iso){
+  if(!iso) return null;
+  const d = new Date(iso + "T00:00:00"); if(isNaN(d)) return null;
+  return Math.round((d - todayStart()) / 86400000);
+}
+function addMonths(m){ const d = todayStart(); d.setMonth(d.getMonth() + m); return d.toISOString().slice(0,10); }
+function niceDate(iso){
+  const d = new Date(iso + "T00:00:00");
+  return isNaN(d) ? iso : d.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"});
+}
+function status(days){
+  if(days == null) return "none";
+  if(days < 0) return "expired";
+  if(days <= S.settings.urgentDays) return "urgent";
+  if(days <= S.settings.soonDays) return "soon";
+  return "ok";
+}
+function whenText(days){
+  if(days == null) return "No date";
+  if(days < -1) return `Expired ${-days} days ago`;
+  if(days === -1) return "Expired yesterday";
+  if(days === 0) return "Expires today";
+  if(days === 1) return "Tomorrow";
+  if(days < 60) return `${days} days`;
+  if(days < 730) return `${Math.round(days/30.4)} months`;
+  return `${(days/365).toFixed(1)} years`;
+}
+function chip(days){ return `<span class="chip ${status(days)}">${esc(whenText(days))}</span>`; }
+
+/* ---------- calorie & water needs ---------- */
+// Estimated average requirements (kcal/day), UK SACN 2011, moderately active.
+const CHILD = { // age: [male, female]
+  1:[765,717],2:[1004,932],3:[1171,1076],4:[1386,1291],5:[1482,1386],6:[1577,1482],7:[1649,1530],8:[1745,1625],
+  9:[1840,1721],10:[2032,1936],11:[2127,2032],12:[2247,2103],13:[2414,2223],14:[2580,2342],15:[2795,2390],
+  16:[2963,2414],17:[3083,2462],18:[3155,2462]
+};
+const ADULT = [[24,2772,2175],[34,2749,2175],[44,2629,2103],[54,2581,2103],[64,2581,2079],[74,2342,1912],[200,2294,1840]];
+const ACTIVITY = { low:0.9, moderate:1, high:1.15 };
+function estKcal(age, sex, activity){
+  age = Math.max(0, Math.floor(num(age) ?? 30));
+  let pair;
+  if(age < 1) pair = [650,600];
+  else if(age <= 18) pair = CHILD[age];
+  else { const band = ADULT.find(b => age <= b[0]); pair = [band[1], band[2]]; }
+  const base = sex === "male" ? pair[0] : sex === "female" ? pair[1] : (pair[0] + pair[1]) / 2;
+  return Math.round(base * (ACTIVITY[activity] ?? 1) / 10) * 10;
+}
+function memberKcal(m){
+  if(m.kind === "pet") return 0;
+  return num(m.kcal) || estKcal(m.age, m.sex, m.activity);
+}
+function memberWater(m){
+  if(m.kind === "pet") return (num(m.weight) || 0) * 0.06; // ~60 ml per kg per day
+  return num(S.settings.waterL) || 3;
+}
+function household(){
+  const people = S.members.filter(m => m.kind !== "pet");
+  const kcalDay = people.reduce((a,m) => a + memberKcal(m), 0) * (num(S.settings.ration) || 100) / 100;
+  const waterDay = S.members.reduce((a,m) => a + memberWater(m), 0);
+  return { people: people.length, pets: S.members.length - people.length, kcalDay, waterDay };
+}
+
+/* ---------- stock maths ---------- */
+function kcalPerUnit(p){
+  if(!p) return null;
+  const k = num(p.per100?.kcal), g = num(p.unitG);
+  return (k != null && g != null) ? k * g / 100 : null;
+}
+function stockTotals(){
+  let kcal = 0, expiredKcal = 0, missing = new Set();
+  for(const b of S.batches){
+    if(!(b.qty > 0)) continue;
+    const per = kcalPerUnit(S.products[b.key]);
+    if(per == null){ missing.add(b.key); continue; }
+    kcal += per * b.qty;
+    const d = daysUntil(b.expiry);
+    if(d != null && d < 0) expiredKcal += per * b.qty;
+  }
+  let litres = 0, expiredL = 0;
+  for(const w of S.water){
+    const l = (num(w.litres) || 0) * (num(w.qty) || 0);
+    litres += l;
+    const d = daysUntil(w.expiry);
+    if(d != null && d < 0) expiredL += l;
+  }
+  return { kcal, expiredKcal, missing: missing.size, litres, expiredL };
+}
+function daysLabel(x){
+  if(!isFinite(x)) return "–";
+  return x < 10 ? fmt(x,1) : fmt(Math.floor(x));
+}
+function roughSpan(days){
+  if(!isFinite(days) || days <= 0) return "";
+  if(days < 14) return "";
+  if(days < 60) return `about ${Math.round(days/7)} weeks`;
+  return `about ${fmt(days/30.4,1)} months`;
+}
+
+/* ---------- views ---------- */
+let tab = "home";
+function show(t){
+  tab = t;
+  for(const s of ["home","scan","stock","water","people"]) document.getElementById("view-"+s).hidden = s !== t;
+  document.querySelectorAll(".tab").forEach(b => { if(b.dataset.tab === t) b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current"); });
+  if(t !== "scan") stopCamera();
+  render();
+  window.scrollTo(0,0);
+}
+function render(){
+  if(tab === "home") renderHome();
+  if(tab === "stock") renderStock();
+  if(tab === "water") renderWater();
+  if(tab === "people") renderPeople();
+}
+
+function renderHome(){
+  const h = household(), t = stockTotals();
+  const foodDays = h.kcalDay ? t.kcal / h.kcalDay : NaN;
+  const waterDays = h.waterDay ? t.litres / h.waterDay : NaN;
+  const target = 14; // bar fills at two weeks; UK guidance often suggests at least 3 days
+  const pct = x => isFinite(x) ? Math.min(100, x / target * 100) : 0;
+
+  const alerts = [];
+  for(const b of S.batches){
+    if(!(b.qty > 0)) continue;
+    const d = daysUntil(b.expiry);
+    if(d != null && d <= S.settings.soonDays){
+      const p = S.products[b.key] || {};
+      alerts.push({ d, name: p.name || "Unnamed item", detail: `${fmt(b.qty,2)} × ${p.unitG ? fmt(num(p.unitG)) + " g" : "pack"}`, key: b.key });
+    }
+  }
+  for(const w of S.water){
+    const d = daysUntil(w.expiry);
+    if(d != null && d <= S.settings.soonDays) alerts.push({ d, name: w.label || "Water", detail: `${fmt(num(w.qty),2)} × ${fmt(num(w.litres),1)} L`, water:true });
+  }
+  alerts.sort((a,b) => a.d - b.d);
+
+  let html = "";
+  if(!S.members.length){
+    html += `<div class="panel"><strong>Start with your household.</strong>
+      <p class="muted small" style="margin:6px 0 10px">Stockist needs to know who it's feeding before it can work out how long your supplies last.</p>
+      <button class="btn primary" data-action="add-member">Add a person</button></div>`;
+  }
+  html += `<div class="gauges">
+    <div class="gauge"><span class="label">Food</span>
+      <span class="big">${daysLabel(foodDays)}<small>days</small></span>
+      <span class="sub">${fmt(t.kcal)} kcal stored${h.kcalDay ? `<br>${fmt(h.kcalDay)} kcal needed a day` : ""}</span>
+      ${roughSpan(foodDays) ? `<span class="sub">${roughSpan(foodDays)}</span>` : ""}
+      <div class="bar"><i style="width:${pct(foodDays)}%"></i></div></div>
+    <div class="gauge"><span class="label">Water</span>
+      <span class="big">${daysLabel(waterDays)}<small>days</small></span>
+      <span class="sub">${fmt(t.litres,1)} L stored${h.waterDay ? `<br>${fmt(h.waterDay,1)} L needed a day` : ""}</span>
+      ${roughSpan(waterDays) ? `<span class="sub">${roughSpan(waterDays)}</span>` : ""}
+      <div class="bar"><i style="width:${pct(waterDays)}%"></i></div></div>
+  </div>`;
+  const notes = [];
+  if(S.settings.ration < 100) notes.push(`Planning at ${S.settings.ration}% of normal calories.`);
+  if(t.expiredKcal > 0) notes.push(`${fmt(t.expiredKcal)} kcal of the food total is past its date.`);
+  if(t.expiredL > 0) notes.push(`${fmt(t.expiredL,1)} L of the water is past its date.`);
+  if(t.missing) notes.push(`${t.missing} product${t.missing>1?"s have":" has"} no calorie info and ${t.missing>1?"aren't":"isn't"} counted. <button class="btn ghost small" data-action="goto-stock">Fix in Stock</button>`);
+  if(notes.length) html += `<div class="list">${notes.map(n => `<div class="note warn">${n}</div>`).join("")}</div>`;
+
+  html += `<h2>Use soon</h2>`;
+  if(!alerts.length){
+    html += `<div class="empty">Nothing expires in the next ${S.settings.soonDays} days.</div>`;
+  } else {
+    html += `<div class="list">${alerts.slice(0,12).map(a => `
+      <div class="alert-row row ${status(a.d)}">
+        <div class="grow"><div class="name">${esc(a.name)}</div><div class="muted small">${esc(a.detail)}</div></div>
+        ${chip(a.d)}
+      </div>`).join("")}</div>`;
+    if(alerts.length > 12) html += `<p class="muted small" style="margin:0">and ${alerts.length - 12} more in Stock and Water.</p>`;
+  }
+  html += `<div class="btnrow"><button class="btn primary" data-action="goto-scan">Scan items</button><button class="btn" data-action="add-water">Add water</button></div>`;
+  $("#view-home").innerHTML = html;
+}
+
+const openItems = new Set();
+let stockQuery = "";
+function renderStock(){
+  const groups = {};
+  for(const b of S.batches){
+    if(!(b.qty > 0)) continue;
+    (groups[b.key] ||= []).push(b);
+  }
+  let keys = Object.keys(groups);
+  const q = stockQuery.trim().toLowerCase();
+  if(q) keys = keys.filter(k => { const p = S.products[k] || {}; return (p.name||"").toLowerCase().includes(q) || (p.brand||"").toLowerCase().includes(q) || k.includes(q); });
+  const firstExp = k => { const ds = groups[k].map(b => daysUntil(b.expiry)).filter(d => d != null); return ds.length ? Math.min(...ds) : Infinity; };
+  keys.sort((a,b) => firstExp(a) - firstExp(b) || (S.products[a]?.name||"").localeCompare(S.products[b]?.name||""));
+
+  let html = `<input type="search" id="stockSearch" placeholder="Search stock" value="${esc(stockQuery)}" aria-label="Search stock">`;
+  if(!keys.length){
+    html += `<div class="empty">${q ? "No matches." : "No food in stock yet. Scan something to get started."}</div>`;
+  } else {
+    html += `<div class="list">` + keys.map(k => {
+      const p = S.products[k] || { name:"Unknown item" };
+      const bs = groups[k].slice().sort((a,b) => (daysUntil(a.expiry) ?? 1e9) - (daysUntil(b.expiry) ?? 1e9));
+      const total = bs.reduce((a,b) => a + b.qty, 0);
+      const per = kcalPerUnit(p);
+      const fe = firstExp(k);
+      return `<details class="item" data-key="${esc(k)}" ${openItems.has(k) ? "open" : ""}>
+        <summary>
+          <span class="name">${esc(p.name || "Unnamed item")}</span>
+          <span class="qty">×${fmt(total,2)}</span>
+          <span class="meta">${[p.brand, p.unitG ? fmt(num(p.unitG)) + " g/ml" : null, per != null ? fmt(per*total) + " kcal" : "no calorie info"].filter(Boolean).map(esc).join(" · ")}</span>
+          <span>${chip(isFinite(fe) ? fe : null)}</span>
+        </summary>
+        <div class="inner">
+          ${bs.map(b => `<div class="batch">
+            <span class="when">${b.expiry ? "Best before " + esc(niceDate(b.expiry)) : "No date"} ${chip(daysUntil(b.expiry))}</span>
+            <span class="stepper"><button data-action="batch-dec" data-id="${b.id}" aria-label="One fewer">−</button><span>${fmt(b.qty,2)}</span><button data-action="batch-inc" data-id="${b.id}" aria-label="One more">+</button></span>
+            <button class="btn small danger" data-action="batch-del" data-id="${b.id}">Remove</button>
+          </div>`).join("")}
+          <div class="btnrow">
+            <button class="btn small" data-action="add-batch" data-key="${esc(k)}">Add more</button>
+            <button class="btn small" data-action="edit-product" data-key="${esc(k)}">Edit details</button>
+          </div>
+        </div>
+      </details>`;
+    }).join("") + `</div>`;
+  }
+  html += `<button class="btn" data-action="add-custom">Add an item without a barcode</button>`;
+  $("#view-stock").innerHTML = html;
+  const s = $("#stockSearch");
+  s.addEventListener("input", () => { stockQuery = s.value; const pos = s.selectionStart; renderStock(); const n = $("#stockSearch"); n.focus(); n.setSelectionRange(pos,pos); });
+  document.querySelectorAll("#view-stock details.item").forEach(d => d.addEventListener("toggle", () => { d.open ? openItems.add(d.dataset.key) : openItems.delete(d.dataset.key); }));
+}
+
+function renderWater(){
+  const h = household(), t = stockTotals();
+  const days = h.waterDay ? t.litres / h.waterDay : NaN;
+  let html = `<div class="gauge"><span class="label">Water stored</span>
+    <span class="big">${fmt(t.litres,1)}<small>litres</small></span>
+    <span class="sub">${h.waterDay ? `Lasts ${daysLabel(days)} days at ${fmt(h.waterDay,1)} L a day` : "Add your household to see how long this lasts."}</span></div>`;
+  const list = S.water.slice().sort((a,b) => (daysUntil(a.expiry) ?? 1e9) - (daysUntil(b.expiry) ?? 1e9));
+  if(!list.length) html += `<div class="empty">No water logged yet. Add bottles, jerry cans or other containers.</div>`;
+  else html += `<div class="list">${list.map(w => `<div class="panel" style="display:grid;gap:8px">
+      <div class="row"><div class="grow"><div class="name">${esc(w.label || "Water")}</div>
+        <div class="muted small">${fmt(num(w.litres),1)} L each · ${fmt(num(w.qty)*num(w.litres),1)} L total${w.expiry ? " · best before " + esc(niceDate(w.expiry)) : ""}</div></div>${chip(daysUntil(w.expiry))}</div>
+      <div class="batch"><span class="stepper"><button data-action="water-dec" data-id="${w.id}" aria-label="One fewer">−</button><span>${fmt(num(w.qty),2)}</span><button data-action="water-inc" data-id="${w.id}" aria-label="One more">+</button></span>
+        <span class="grow"></span><button class="btn small" data-action="edit-water" data-id="${w.id}">Edit</button></div>
+    </div>`).join("")}</div>`;
+  html += `<button class="btn primary" data-action="add-water">Add water</button>
+    <p class="muted small" style="margin:0">Need per person: ${fmt(num(S.settings.waterL),1)} L a day for drinking and basic hygiene. Change it in Settings.</p>`;
+  $("#view-water").innerHTML = html;
+}
+
+function renderPeople(){
+  const h = household();
+  let html = `<div class="gauge"><span class="label">Daily need</span>
+    <span class="big">${fmt(h.kcalDay)}<small>kcal</small></span>
+    <span class="sub">${h.people} ${h.people === 1 ? "person" : "people"}${h.pets ? `, ${h.pets} pet${h.pets>1?"s":""}` : ""} · ${fmt(h.waterDay,1)} L water a day</span></div>`;
+  if(!S.members.length) html += `<div class="empty">No one added yet.</div>`;
+  else html += `<div class="list">${S.members.map(m => {
+    const sub = m.kind === "pet"
+      ? `Pet · ${fmt(num(m.weight),1)} kg · ${fmt(memberWater(m),1)} L water a day`
+      : `${m.age != null && m.age !== "" ? esc(m.age) + " yrs · " : ""}${m.sex === "male" ? "Male" : m.sex === "female" ? "Female" : "Not specified"} · ${({low:"Low",moderate:"Moderate",high:"High"})[m.activity] || "Moderate"} activity`;
+    return `<button class="panel row" style="text-align:left;cursor:pointer;width:100%" data-action="edit-member" data-id="${m.id}">
+      <div class="grow"><div class="name">${esc(m.name || (m.kind === "pet" ? "Pet" : "Person"))}</div><div class="muted small">${sub}</div></div>
+      ${m.kind === "pet" ? "" : `<span class="num" style="font-weight:600">${fmt(memberKcal(m))}<span class="muted small"> kcal</span></span>`}
+    </button>`; }).join("")}</div>`;
+  html += `<div class="btnrow"><button class="btn primary" data-action="add-member">Add a person</button><button class="btn" data-action="add-pet">Add a pet</button></div>
+    <p class="muted small" style="margin:0">Calorie estimates use UK reference values for each age and sex. Enter your own figure on a person if you know better. Pets count towards water only; track pet food as normal stock if you like.</p>`;
+  $("#view-people").innerHTML = html;
+}
+
+/* ---------- sheet (dialog) ---------- */
+const sheet = $("#sheet");
+let onSheetClose = null;
+function openSheet(html, after){
+  sheet.innerHTML = html;
+  if(!sheet.open) sheet.showModal();
+  if(after) after(sheet);
+}
+function closeSheet(){ if(sheet.open) sheet.close(); }
+sheet.addEventListener("close", () => { const f = onSheetClose; onSheetClose = null; if(f) f(); });
+sheet.addEventListener("click", e => { if(e.target === sheet) closeSheet(); });
+
+function confirmSheet(title, text, yesLabel, onYes){
+  openSheet(`<div class="body"><h3>${esc(title)}</h3><p class="muted" style="margin:0">${esc(text)}</p>
+    <div class="btnrow"><button class="btn" data-x="no">Cancel</button><button class="btn primary" data-x="yes" style="background:var(--expired);border-color:var(--expired)">${esc(yesLabel)}</button></div></div>`, s => {
+    s.querySelector("[data-x=no]").onclick = closeSheet;
+    s.querySelector("[data-x=yes]").onclick = () => { closeSheet(); onYes(); };
+  });
+}
+
+const N100 = [["kcal","Energy","kcal"],["protein","Protein","g"],["carbs","Carbs","g"],["fat","Fat","g"],["fibre","Fibre","g"],["sugar","Sugars","g"],["salt","Salt","g"]];
+
+function productSheet({ key, product, note, noteWarn, withBatch, title }){
+  const p = product || { name:"", brand:"", unitG:"", per100:{} };
+  const isBarcode = /^\d+$/.test(key || "");
+  openSheet(`<form id="pform" autocomplete="off">
+    <div><h3>${esc(title)}</h3>${isBarcode ? `<div class="code">${esc(key)}</div>` : ""}</div>
+    ${note ? `<div class="note ${noteWarn ? "warn" : ""}">${esc(note)}</div>` : ""}
+    <label class="f">Name<input type="text" id="p_name" required value="${esc(p.name)}" placeholder="e.g. Baked beans"></label>
+    <div class="grid2">
+      <label class="f">Brand<input type="text" id="p_brand" value="${esc(p.brand)}"></label>
+      <label class="f">Pack size (g or ml)<input type="number" inputmode="decimal" step="any" min="0" id="p_unit" value="${esc(p.unitG)}"></label>
+    </div>
+    <fieldset><legend>Per 100 g</legend>
+      <div class="grid3">${N100.map(([k,l,u]) => `<label class="f">${l} (${u})<input type="number" inputmode="decimal" step="any" min="0" id="p_${k}" value="${esc(p.per100?.[k] ?? "")}"></label>`).join("")}</div>
+      <div class="calc" id="p_calc"></div>
+    </fieldset>
+    ${withBatch ? `<fieldset><legend>Adding to stock</legend>
+      <div class="grid2">
+        <label class="f">How many packs<input type="number" inputmode="decimal" step="any" min="0" id="b_qty" value="1"></label>
+        <label class="f">Best before<input type="date" id="b_exp"></label>
+      </div>
+      <div class="quick"><button type="button" data-m="6">+6 months</button><button type="button" data-m="12">+1 year</button><button type="button" data-m="24">+2 years</button><button type="button" data-m="0">No date</button></div>
+    </fieldset>` : ""}
+    <div class="btnrow"><button type="button" class="btn" id="p_cancel">Cancel</button><button type="submit" class="btn primary">${withBatch ? "Add to stock" : "Save"}</button></div>
+  </form>`, s => {
+    const calc = () => {
+      const k = num(s.querySelector("#p_kcal").value), g = num(s.querySelector("#p_unit").value);
+      s.querySelector("#p_calc").textContent = (k != null && g != null) ? `${fmt(k*g/100)} kcal per pack` : "Enter pack size and kcal to count this item.";
+    };
+    s.querySelectorAll("#p_kcal,#p_unit").forEach(i => i.addEventListener("input", calc)); calc();
+    s.querySelectorAll(".quick button").forEach(b => b.onclick = () => { s.querySelector("#b_exp").value = b.dataset.m === "0" ? "" : addMonths(+b.dataset.m); });
+    s.querySelector("#p_cancel").onclick = closeSheet;
+    s.querySelector("#pform").onsubmit = e => {
+      e.preventDefault();
+      const k = key || ("item-" + uid());
+      const per100 = {};
+      for(const [n] of N100){ const v = num(s.querySelector("#p_"+n).value); if(v != null) per100[n] = v; }
+      S.products[k] = Object.assign({}, S.products[k] || {}, {
+        name: s.querySelector("#p_name").value.trim(), brand: s.querySelector("#p_brand").value.trim(),
+        unitG: num(s.querySelector("#p_unit").value), per100
+      });
+      let msg = "Saved";
+      if(withBatch){
+        const qty = num(s.querySelector("#b_qty").value) || 0;
+        const exp = s.querySelector("#b_exp").value || null;
+        if(qty > 0){
+          const same = S.batches.find(b => b.key === k && (b.expiry || null) === exp);
+          if(same) same.qty += qty; else S.batches.push({ id: uid(), key: k, qty, expiry: exp, added: new Date().toISOString() });
+          msg = `Added ${fmt(qty,2)} × ${S.products[k].name || "item"}`;
+        }
+      }
+      save(); closeSheet(); toast(msg); render();
+    };
+    if(!p.name) setTimeout(() => s.querySelector("#p_name").focus(), 50);
+  });
+}
+
+function waterSheet(w){
+  const isNew = !w; w = w || { label:"", litres:"", qty:1, expiry:"" };
+  openSheet(`<form id="wform" autocomplete="off">
+    <h3>${isNew ? "Add water" : "Edit water"}</h3>
+    <label class="f">Description<input type="text" id="w_label" value="${esc(w.label)}" placeholder="e.g. 2 L bottled water"></label>
+    <div class="grid2">
+      <label class="f">Litres per container<input type="number" inputmode="decimal" step="any" min="0" id="w_l" value="${esc(w.litres)}" required></label>
+      <label class="f">How many<input type="number" inputmode="decimal" step="any" min="0" id="w_q" value="${esc(w.qty)}" required></label>
+    </div>
+    <label class="f">Best before or refresh date<input type="date" id="w_exp" value="${esc(w.expiry || "")}"></label>
+    <div class="quick"><button type="button" data-m="6">+6 months</button><button type="button" data-m="12">+1 year</button><button type="button" data-m="24">+2 years</button></div>
+    <p class="muted small" style="margin:0">Tap water you store yourself is usually refreshed every 6 months.</p>
+    <div class="btnrow">${isNew ? "" : `<button type="button" class="btn danger" id="w_del">Delete</button>`}<button type="button" class="btn" id="w_cancel">Cancel</button><button type="submit" class="btn primary">Save</button></div>
+  </form>`, s => {
+    s.querySelectorAll(".quick button").forEach(b => b.onclick = () => { s.querySelector("#w_exp").value = addMonths(+b.dataset.m); });
+    s.querySelector("#w_cancel").onclick = closeSheet;
+    const del = s.querySelector("#w_del");
+    if(del) del.onclick = () => confirmSheet("Delete this water?", `${w.label || "This entry"} will be removed from your stock.`, "Delete", () => { S.water = S.water.filter(x => x.id !== w.id); save(); render(); toast("Deleted"); });
+    s.querySelector("#wform").onsubmit = e => {
+      e.preventDefault();
+      const rec = { id: w.id || uid(), label: s.querySelector("#w_label").value.trim(), litres: num(s.querySelector("#w_l").value) || 0,
+        qty: num(s.querySelector("#w_q").value) || 0, expiry: s.querySelector("#w_exp").value || null };
+      if(isNew) S.water.push(rec); else S.water = S.water.map(x => x.id === rec.id ? rec : x);
+      save(); closeSheet(); render(); toast("Water saved");
+    };
+  });
+}
+
+function memberSheet(m, kind){
+  const isNew = !m; m = m || { kind, name:"", age:"", sex:"", activity:"moderate", kcal:"", weight:"" };
+  const pet = m.kind === "pet";
+  openSheet(`<form id="mform" autocomplete="off">
+    <h3>${isNew ? (pet ? "Add a pet" : "Add a person") : "Edit " + esc(m.name || (pet ? "pet" : "person"))}</h3>
+    <label class="f">Name<input type="text" id="m_name" value="${esc(m.name)}" placeholder="${pet ? "e.g. the dog" : "Name or initials"}"></label>
+    ${pet ? `<label class="f">Weight (kg)<input type="number" inputmode="decimal" step="any" min="0" id="m_weight" value="${esc(m.weight)}" required></label>
+      <div class="calc" id="m_calc"></div>` : `
+      <div class="grid2">
+        <label class="f">Age<input type="number" inputmode="numeric" min="0" max="120" id="m_age" value="${esc(m.age)}" required></label>
+        <label class="f">Sex<select id="m_sex"><option value="">Not specified</option><option value="female"${m.sex==="female"?" selected":""}>Female</option><option value="male"${m.sex==="male"?" selected":""}>Male</option></select></label>
+      </div>
+      <label class="f">Activity level<select id="m_act">
+        <option value="low"${m.activity==="low"?" selected":""}>Low (mostly sitting)</option>
+        <option value="moderate"${!m.activity||m.activity==="moderate"?" selected":""}>Moderate</option>
+        <option value="high"${m.activity==="high"?" selected":""}>High (physical work or sport)</option></select></label>
+      <label class="f">Own calorie figure (optional)<input type="number" inputmode="numeric" min="0" id="m_kcal" value="${esc(m.kcal)}" placeholder="Leave blank to use the estimate"></label>
+      <div class="calc" id="m_calc"></div>`}
+    <div class="btnrow">${isNew ? "" : `<button type="button" class="btn danger" id="m_del">Remove</button>`}<button type="button" class="btn" id="m_cancel">Cancel</button><button type="submit" class="btn primary">Save</button></div>
+  </form>`, s => {
+    const g = id => s.querySelector(id);
+    const calc = () => {
+      if(pet){ g("#m_calc").textContent = `${fmt((num(g("#m_weight").value)||0)*0.06,1)} L water a day`; return; }
+      const est = estKcal(g("#m_age").value, g("#m_sex").value, g("#m_act").value);
+      g("#m_calc").textContent = `Estimate: ${fmt(est)} kcal a day` + (num(g("#m_kcal").value) ? ` (using your ${fmt(num(g("#m_kcal").value))})` : "");
+    };
+    s.querySelectorAll("input,select").forEach(i => i.addEventListener("input", calc)); calc();
+    g("#m_cancel").onclick = closeSheet;
+    const del = g("#m_del");
+    if(del) del.onclick = () => confirmSheet("Remove from household?", `${m.name || "This member"} will no longer count towards daily needs.`, "Remove", () => { S.members = S.members.filter(x => x.id !== m.id); save(); render(); toast("Removed"); });
+    g("#mform").onsubmit = e => {
+      e.preventDefault();
+      const rec = pet
+        ? { id: m.id || uid(), kind:"pet", name: g("#m_name").value.trim(), weight: num(g("#m_weight").value) }
+        : { id: m.id || uid(), kind:"person", name: g("#m_name").value.trim(), age: num(g("#m_age").value), sex: g("#m_sex").value, activity: g("#m_act").value, kcal: num(g("#m_kcal").value) };
+      if(isNew) S.members.push(rec); else S.members = S.members.map(x => x.id === rec.id ? rec : x);
+      save(); closeSheet(); render(); toast("Saved");
+    };
+  });
+}
+
+function settingsSheet(){
+  const st = S.settings;
+  openSheet(`<form id="sform" autocomplete="off">
+    <h3>Settings</h3>
+    <div class="grid2">
+      <label class="f">Water per person a day (L)<input type="number" inputmode="decimal" step="any" min="0" id="s_w" value="${esc(st.waterL)}"></label>
+      <label class="f">Plan at % of normal calories<input type="number" inputmode="numeric" min="10" max="150" id="s_r" value="${esc(st.ration)}"></label>
+      <label class="f">"Eat now" warning (days)<input type="number" inputmode="numeric" min="1" id="s_u" value="${esc(st.urgentDays)}"></label>
+      <label class="f">"Use soon" warning (days)<input type="number" inputmode="numeric" min="1" id="s_s" value="${esc(st.soonDays)}"></label>
+    </div>
+    <button type="submit" class="btn primary">Save settings</button>
+    <fieldset><legend>Backup</legend>
+      <p class="muted small" style="margin:0">Your data is stored on this device only. Export a backup now and then, and use it to move everything to another device.</p>
+      <div class="btnrow"><button type="button" class="btn" id="s_exp">Export backup</button><button type="button" class="btn" id="s_imp">Import backup</button></div>
+    </fieldset>
+    <button type="button" class="btn danger" id="s_wipe">Erase all data</button>
+    <p class="muted small" style="margin:0">Stockist v${VERSION}. Product details come from Open Food Facts.</p>
+  </form>`, s => {
+    const g = id => s.querySelector(id);
+    g("#sform").onsubmit = e => {
+      e.preventDefault();
+      st.waterL = num(g("#s_w").value) || 3; st.ration = num(g("#s_r").value) || 100;
+      st.urgentDays = Math.max(1, Math.round(num(g("#s_u").value) || 30));
+      st.soonDays = Math.max(st.urgentDays, Math.round(num(g("#s_s").value) || 90));
+      save(); closeSheet(); render(); toast("Settings saved");
+    };
+    g("#s_exp").onclick = exportData;
+    g("#s_imp").onclick = () => $("#importFile").click();
+    g("#s_wipe").onclick = () => confirmSheet("Erase everything?", "This deletes your household, stock and water from this device. Export a backup first if you might want it back.", "Erase", () => { S = blank(); save(); render(); toast("All data erased"); });
+  });
+}
+
+/* ---------- backup ---------- */
+function exportData(){
+  const blob = new Blob([JSON.stringify({ app:"Stockist", version:VERSION, exported:new Date().toISOString(), data:S }, null, 2)], { type:"application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `stockist-backup-${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  toast("Backup exported");
+}
+$("#importFile").addEventListener("change", e => {
+  const f = e.target.files[0]; e.target.value = "";
+  if(!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    let parsed;
+    try{ parsed = JSON.parse(r.result); }catch(err){ toast("That file isn't a Stockist backup."); return; }
+    const d = parsed && parsed.data ? parsed.data : parsed;
+    if(!d || !Array.isArray(d.batches) || !Array.isArray(d.members)){ toast("That file isn't a Stockist backup."); return; }
+    confirmSheet("Replace current data?", `Import the backup from ${parsed.exported ? niceDate(parsed.exported.slice(0,10)) : "this file"}? Everything on this device will be replaced.`, "Replace", () => { S = normalise(d); save(); render(); toast("Backup imported"); });
+  };
+  r.readAsText(f);
+});
+
+/* ---------- toast with undo ---------- */
+let toastTimer;
+function toast(msg, undo){
+  const t = $("#toast");
+  t.innerHTML = `<span>${esc(msg)}</span>` + (undo ? `<button type="button">Undo</button>` : "");
+  t.hidden = false;
+  if(undo) t.querySelector("button").onclick = () => { undo(); t.hidden = true; };
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.hidden = true, undo ? 6000 : 2600);
+}
+function snapshotUndo(){ const snap = JSON.stringify({ b:S.batches, w:S.water }); return () => { const o = JSON.parse(snap); S.batches = o.b; S.water = o.w; save(); render(); toast("Undone"); }; }
+
+/* ---------- scanning ---------- */
+let mode = "in";
+let scanner = null, camOn = false, busy = false, lastCode = "", lastAt = 0;
+document.querySelectorAll("#modeSeg button").forEach(b => b.addEventListener("click", () => {
+  mode = b.dataset.mode;
+  document.querySelectorAll("#modeSeg button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  $("#modeSeg").classList.toggle("out", mode === "out");
+  $("#scanHint").textContent = mode === "out"
+    ? "Take out mode: each scan removes one pack, using the oldest date first."
+    : "Point the camera at a barcode. A USB scanner can type into the box below.";
+}));
+
+async function startCamera(){
+  if(typeof Html5Qrcode === "undefined"){ toast("The scanner couldn't load. Check your internet connection."); return; }
+  try{
+    const F = Html5QrcodeSupportedFormats;
+    scanner = scanner || new Html5Qrcode("reader", { formatsToSupport:[F.EAN_13,F.EAN_8,F.UPC_A,F.UPC_E,F.CODE_128], useBarCodeDetectorIfSupported:true, verbose:false });
+    await scanner.start({ facingMode:"environment" },
+      { fps:10, qrbox:(w,h) => ({ width:Math.floor(Math.min(w*0.85, 360)), height:Math.floor(Math.min(h*0.45, 160)) }) },
+      onScan, () => {});
+    camOn = true; $("#camStart").hidden = true; $("#camStop").hidden = false;
+  }catch(err){
+    toast("Couldn't open the camera. Allow camera access, and make sure the page is opened over https.");
+  }
+}
+async function stopCamera(){
+  if(scanner && camOn){ try{ await scanner.stop(); }catch(e){} }
+  camOn = false; $("#camStart").hidden = false; $("#camStop").hidden = true;
+}
+function pauseCam(){ try{ if(camOn) scanner.pause(true); }catch(e){} }
+function resumeCam(){ try{ if(camOn) scanner.resume(); }catch(e){} }
+$("#camStart").onclick = startCamera;
+$("#camStop").onclick = stopCamera;
+
+function onScan(text){
+  const now = Date.now();
+  if(busy || (text === lastCode && now - lastAt < 2500)) return;
+  lastCode = text; lastAt = now;
+  if(navigator.vibrate) navigator.vibrate(40);
+  handleCode(text);
+}
+$("#codeForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const v = $("#codeInput").value; $("#codeInput").value = "";
+  if(v.trim()) handleCode(v);
+});
+
+async function lookup(code){
+  const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), 9000);
+  try{
+    const r = await fetch(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(code)}.json?fields=product_name,product_name_en,brands,product_quantity,quantity,nutriments`, { signal: ctl.signal });
+    if(!r.ok) return { status: r.status === 404 ? "missing" : "error" };
+    const j = await r.json();
+    if(j.status !== 1 || !j.product) return { status:"missing" };
+    const p = j.product, n = p.nutriments || {};
+    const per100 = {};
+    const pick = (k, src) => { const v = num(n[src]); if(v != null) per100[k] = Math.round(v*10)/10; };
+    pick("kcal","energy-kcal_100g"); pick("protein","proteins_100g"); pick("carbs","carbohydrates_100g"); pick("fat","fat_100g");
+    pick("fibre","fiber_100g"); pick("sugar","sugars_100g"); pick("salt","salt_100g");
+    if(per100.kcal == null && num(n["energy_100g"]) != null) per100.kcal = Math.round(num(n["energy_100g"]) / 4.184);
+    let unitG = num(p.product_quantity);
+    if(unitG == null && p.quantity){ const m = String(p.quantity).match(/([\d.,]+)\s*(kg|g|ml|cl|l)\b/i); if(m){ const v = num(m[1]); const u = m[2].toLowerCase(); unitG = v * ({kg:1000,g:1,ml:1,cl:10,l:1000})[u]; } }
+    return { status:"found", product:{ name: p.product_name_en || p.product_name || "", brand: (p.brands || "").split(",")[0].trim(), unitG, per100 } };
+  }catch(e){ return { status:"error" }; }
+  finally{ clearTimeout(tm); }
+}
+
+async function handleCode(raw){
+  const code = String(raw).replace(/\s+/g, "");
+  if(!/^\d{6,14}$/.test(code)){ toast("That doesn't look like a product barcode."); return; }
+  if(mode === "out"){ takeOut(code); return; }
+  busy = true; pauseCam();
+  onSheetClose = () => { busy = false; resumeCam(); };
+  const known = S.products[code];
+  if(known){
+    productSheet({ key:code, product:known, title:"Add to stock", withBatch:true, note:"You've stocked this before." });
+    return;
+  }
+  openSheet(`<div class="body"><h3>Looking up ${esc(code)}…</h3><p class="muted" style="margin:0">Checking Open Food Facts.</p></div>`);
+  const res = await lookup(code);
+  if(!sheet.open) return; // closed while waiting
+  if(res.status === "found"){
+    const missingKcal = res.product.per100.kcal == null || res.product.unitG == null;
+    productSheet({ key:code, product:res.product, title:"Add to stock", withBatch:true,
+      note: missingKcal ? "Found it, but the pack size or calories are missing. Fill them in from the label so it counts." : "Found on Open Food Facts. Check the details look right.", noteWarn: missingKcal });
+  } else {
+    productSheet({ key:code, product:null, title:"New product", withBatch:true, noteWarn:true,
+      note: res.status === "missing" ? "Not found in Open Food Facts. Enter the details from the label once and Stockist will remember them." : "Couldn't reach Open Food Facts. Enter the details from the label, or try again when you're online." });
+  }
+}
+
+function takeOut(code){
+  const p = S.products[code];
+  const bs = S.batches.filter(b => b.key === code && b.qty > 0).sort((a,b) => (daysUntil(a.expiry) ?? 1e9) - (daysUntil(b.expiry) ?? 1e9));
+  if(!bs.length){ toast(p ? `No ${p.name || "stock"} left to take out.` : "That item isn't in your stock."); return; }
+  const undo = snapshotUndo();
+  const b = bs[0];
+  b.qty = Math.max(0, Math.round((b.qty - 1) * 100) / 100);
+  if(b.qty <= 0) S.batches = S.batches.filter(x => x.id !== b.id);
+  save();
+  const left = S.batches.filter(x => x.key === code).reduce((a,x) => a + x.qty, 0);
+  toast(`Took out 1 × ${p?.name || "item"}. ${fmt(left,2)} left.`, undo);
+}
+
+/* ---------- global actions ---------- */
+document.addEventListener("click", e => {
+  const tabBtn = e.target.closest(".tab");
+  if(tabBtn){ show(tabBtn.dataset.tab); return; }
+  const el = e.target.closest("[data-action]");
+  if(!el) return;
+  const a = el.dataset.action, id = el.dataset.id, key = el.dataset.key;
+  const batch = id && S.batches.find(b => b.id === id);
+  const water = id && S.water.find(w => w.id === id);
+  switch(a){
+    case "open-settings": settingsSheet(); break;
+    case "goto-scan": show("scan"); break;
+    case "goto-stock": show("stock"); break;
+    case "add-member": memberSheet(null, "person"); break;
+    case "add-pet": memberSheet(null, "pet"); break;
+    case "edit-member": memberSheet(S.members.find(m => m.id === id)); break;
+    case "add-water": waterSheet(null); break;
+    case "edit-water": waterSheet(water); break;
+    case "water-inc": water.qty = (num(water.qty)||0) + 1; save(); render(); break;
+    case "water-dec": { const u = snapshotUndo(); water.qty = Math.max(0, (num(water.qty)||0) - 1); save(); render(); toast(`${water.label || "Water"}: ${fmt(water.qty,2)} left`, u); break; }
+    case "add-custom": productSheet({ key:null, product:null, title:"Add an item", withBatch:true }); break;
+    case "add-batch": productSheet({ key, product:S.products[key], title:"Add more", withBatch:true }); break;
+    case "edit-product": productSheet({ key, product:S.products[key], title:"Edit details", withBatch:false }); break;
+    case "batch-inc": batch.qty += 1; save(); render(); break;
+    case "batch-dec": {
+      const u = snapshotUndo();
+      batch.qty = Math.max(0, Math.round((batch.qty - 1)*100)/100);
+      if(batch.qty <= 0) S.batches = S.batches.filter(b => b.id !== id);
+      save(); render(); toast(`Took out 1 × ${S.products[batch.key]?.name || "item"}`, u); break;
+    }
+    case "batch-del": {
+      const u = snapshotUndo();
+      S.batches = S.batches.filter(b => b.id !== id); save(); render();
+      toast(`Removed ${S.products[batch.key]?.name || "batch"}`, u); break;
+    }
+  }
+});
+
+render();
+</script>
+</body>
+</html>
