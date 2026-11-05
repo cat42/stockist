@@ -107,7 +107,7 @@ details.item .inner{border-top:1px solid var(--line);padding:10px 14px 12px;disp
 .btn:disabled{opacity:.5}
 .btnrow{display:flex;gap:8px;flex-wrap:wrap}
 .btnrow .btn{flex:1}
-label.f{display:grid;gap:4px;font-size:13px;font-weight:600;color:var(--ink-2)}
+.f{display:grid;gap:4px;font-size:13px;font-weight:600;color:var(--ink-2)}
 input[type=text],input[type=number],input[type=date],input[type=search],select{width:100%;min-height:44px;padding:9px 11px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);font-size:16px}
 input:focus,select:focus{outline:2px solid var(--pine);outline-offset:0;border-color:var(--pine)}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -119,6 +119,19 @@ input:focus,select:focus{outline:2px solid var(--pine);outline-offset:0;border-c
 .seg button{border:0;background:none;border-radius:9px;padding:10px;font-weight:600;cursor:pointer;color:var(--ink-2)}
 .seg button[aria-pressed=true]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
 .seg.out button[aria-pressed=true]{background:var(--fur);color:#fff}
+.dsel{display:grid;grid-template-columns:.8fr 1fr 1fr;gap:8px}
+.dhint{font-weight:400}
+.sortrow{display:flex;gap:8px}
+.sortrow input{flex:1;min-width:0}
+.sortrow select{width:auto;flex:none;max-width:50%}
+.barlbl{font-size:12px;color:var(--ink-3);margin-top:2px}
+.check{display:flex;align-items:center;gap:10px;font-weight:600;font-size:14px;cursor:pointer}
+.check input{width:22px;height:22px;accent-color:var(--pine)}
+.scanbtns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.scanbtns .btn{min-height:96px;flex-direction:column;font-size:16px;gap:8px}
+.scanbtns .btn svg{width:30px;height:30px}
+.btn.out{background:var(--fur);border-color:var(--fur);color:#fff}
+dialog.cam.out #camTitle{color:var(--fur)}
 
 #reader{width:100%;border-radius:14px;overflow:hidden;background:#000;min-height:0}
 #reader video{width:100%!important;display:block}
@@ -181,18 +194,19 @@ legend{font-size:13px;font-weight:600;color:var(--ink-2);padding:0 4px}
   <section id="view-home"></section>
 
   <section id="view-scan" hidden>
-    <div class="seg" id="modeSeg">
-      <button type="button" data-mode="in" aria-pressed="true">Add stock</button>
-      <button type="button" data-mode="out" aria-pressed="false">Take out</button>
+    <div class="scanbtns">
+      <button class="btn primary" type="button" data-action="cam-in">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><path d="M12 8v8M8 12h8"/></svg>Add stock</button>
+      <button class="btn out" type="button" data-action="cam-out">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><path d="M8 12h8"/></svg>Take out</button>
     </div>
-    <div id="reader"></div>
-    <div class="btnrow">
-      <button class="btn primary" id="camStart" type="button">Start camera</button>
-      <button class="btn" id="camStop" type="button" hidden>Stop camera</button>
-    </div>
-    <p class="scanhint" id="scanHint">Point the camera at a barcode. A USB scanner can type into the box below.</p>
+    <p class="scanhint">Each button opens the camera. Scan as many items as you like, then tap Done.</p>
     <form class="panel" id="codeForm" autocomplete="off" style="display:grid;gap:10px">
-      <label class="f" for="codeInput">Barcode number</label>
+      <label class="f" for="codeInput">Type a barcode or use a USB scanner</label>
+      <div class="seg" id="modeSeg">
+        <button type="button" data-mode="in" aria-pressed="true">Add stock</button>
+        <button type="button" data-mode="out" aria-pressed="false">Take out</button>
+      </div>
       <div class="row">
         <input class="grow num" type="text" inputmode="numeric" id="codeInput" placeholder="e.g. 5000157024671">
         <button class="btn primary" type="submit">Go</button>
@@ -219,6 +233,17 @@ legend{font-size:13px;font-weight:600;color:var(--ink-2);padding:0 4px}
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17.5" cy="9.5" r="2.5"/><path d="M16 14.6A5 5 0 0 1 21.5 19"/></svg>Household</button>
 </nav>
 
+<dialog class="sheet cam" id="cam">
+  <div class="body">
+    <div class="row"><h3 class="grow" id="camTitle">Add stock</h3><button class="btn small" type="button" id="camClose">Done</button></div>
+    <div id="reader"></div>
+    <p class="scanhint" id="camHint"></p>
+    <form class="row" id="camCodeForm" autocomplete="off">
+      <input class="grow num" type="text" inputmode="numeric" id="camCode" placeholder="Or type the barcode" aria-label="Barcode number">
+      <button class="btn primary" type="submit">Go</button>
+    </form>
+  </div>
+</dialog>
 <dialog class="sheet" id="sheet"></dialog>
 <div id="toast" hidden></div>
 <input type="file" id="importFile" accept="application/json,.json" hidden>
@@ -226,14 +251,14 @@ legend{font-size:13px;font-weight:600;color:var(--ink-2);padding:0 4px}
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
 "use strict";
-const VERSION = "0.1";
+const VERSION = "0.2";
 const KEY = "stockist-data";
 document.getElementById("ver").textContent = "v" + VERSION;
 
 /* ---------- data ---------- */
 function blank(){
-  return { schema:1, members:[], products:{}, batches:[], water:[],
-    settings:{ waterL:3, ration:100, urgentDays:30, soonDays:90 } };
+  return { schema:1, members:[], products:{}, batches:[], water:[], waterProducts:{},
+    settings:{ waterL:3, ration:100, urgentDays:30, soonDays:90, goalDays:14, sound:true, stockSort:"expiry" } };
 }
 function normalise(d){
   const b = blank();
@@ -244,6 +269,7 @@ function normalise(d){
     products: d.products && typeof d.products === "object" ? d.products : {},
     batches: Array.isArray(d.batches) ? d.batches : [],
     water: Array.isArray(d.water) ? d.water : [],
+    waterProducts: d.waterProducts && typeof d.waterProducts === "object" ? d.waterProducts : {},
     settings: Object.assign(b.settings, d.settings || {})
   };
 }
@@ -370,7 +396,6 @@ function show(t){
   tab = t;
   for(const s of ["home","scan","stock","water","people"]) document.getElementById("view-"+s).hidden = s !== t;
   document.querySelectorAll(".tab").forEach(b => { if(b.dataset.tab === t) b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current"); });
-  if(t !== "scan") stopCamera();
   render();
   window.scrollTo(0,0);
 }
@@ -385,7 +410,7 @@ function renderHome(){
   const h = household(), t = stockTotals();
   const foodDays = h.kcalDay ? t.kcal / h.kcalDay : NaN;
   const waterDays = h.waterDay ? t.litres / h.waterDay : NaN;
-  const target = 14; // bar fills at two weeks; UK guidance often suggests at least 3 days
+  const target = Math.max(1, num(S.settings.goalDays) || 14);
   const pct = x => isFinite(x) ? Math.min(100, x / target * 100) : 0;
 
   const alerts = [];
@@ -414,12 +439,12 @@ function renderHome(){
       <span class="big">${daysLabel(foodDays)}<small>days</small></span>
       <span class="sub">${fmt(t.kcal)} kcal stored${h.kcalDay ? `<br>${fmt(h.kcalDay)} kcal needed a day` : ""}</span>
       ${roughSpan(foodDays) ? `<span class="sub">${roughSpan(foodDays)}</span>` : ""}
-      <div class="bar"><i style="width:${pct(foodDays)}%"></i></div></div>
+      <div class="bar"><i style="width:${pct(foodDays)}%"></i></div><span class="barlbl">${fmt(pct(foodDays))}% of your ${target}-day goal</span></div>
     <div class="gauge"><span class="label">Water</span>
       <span class="big">${daysLabel(waterDays)}<small>days</small></span>
       <span class="sub">${fmt(t.litres,1)} L stored${h.waterDay ? `<br>${fmt(h.waterDay,1)} L needed a day` : ""}</span>
       ${roughSpan(waterDays) ? `<span class="sub">${roughSpan(waterDays)}</span>` : ""}
-      <div class="bar"><i style="width:${pct(waterDays)}%"></i></div></div>
+      <div class="bar"><i style="width:${pct(waterDays)}%"></i></div><span class="barlbl">${fmt(pct(waterDays))}% of your ${target}-day goal</span></div>
   </div>`;
   const notes = [];
   if(S.settings.ration < 100) notes.push(`Planning at ${S.settings.ration}% of normal calories.`);
@@ -455,9 +480,17 @@ function renderStock(){
   const q = stockQuery.trim().toLowerCase();
   if(q) keys = keys.filter(k => { const p = S.products[k] || {}; return (p.name||"").toLowerCase().includes(q) || (p.brand||"").toLowerCase().includes(q) || k.includes(q); });
   const firstExp = k => { const ds = groups[k].map(b => daysUntil(b.expiry)).filter(d => d != null); return ds.length ? Math.min(...ds) : Infinity; };
-  keys.sort((a,b) => firstExp(a) - firstExp(b) || (S.products[a]?.name||"").localeCompare(S.products[b]?.name||""));
+  const nm = k => (S.products[k]?.name || "").toLowerCase();
+  const dens = k => num(S.products[k]?.per100?.kcal) ?? -1;
+  const sortBy = S.settings.stockSort || "expiry";
+  keys.sort((a,b) =>
+    sortBy === "name" ? nm(a).localeCompare(nm(b)) :
+    sortBy === "density" ? (dens(b) - dens(a)) || nm(a).localeCompare(nm(b)) :
+    (firstExp(a) - firstExp(b)) || nm(a).localeCompare(nm(b)));
 
-  let html = `<input type="search" id="stockSearch" placeholder="Search stock" value="${esc(stockQuery)}" aria-label="Search stock">`;
+  const so = (v,t) => `<option value="${v}"${sortBy === v ? " selected" : ""}>${t}</option>`;
+  let html = `<div class="sortrow"><input type="search" id="stockSearch" placeholder="Search stock" value="${esc(stockQuery)}" aria-label="Search stock">
+    <select id="stockSort" aria-label="Sort by">${so("expiry","Expiry date")}${so("name","Name A–Z")}${so("density","Calorie density")}</select></div>`;
   if(!keys.length){
     html += `<div class="empty">${q ? "No matches." : "No food in stock yet. Scan something to get started."}</div>`;
   } else {
@@ -471,7 +504,7 @@ function renderStock(){
         <summary>
           <span class="name">${esc(p.name || "Unnamed item")}</span>
           <span class="qty">×${fmt(total,2)}</span>
-          <span class="meta">${[p.brand, p.unitG ? fmt(num(p.unitG)) + " g/ml" : null, per != null ? fmt(per*total) + " kcal" : "no calorie info"].filter(Boolean).map(esc).join(" · ")}</span>
+          <span class="meta">${[p.brand, p.unitG ? fmt(num(p.unitG)) + " g/ml" : null, p.per100?.kcal != null ? fmt(num(p.per100.kcal)) + " kcal/100 g" : null, per != null ? fmt(per*total) + " kcal" : "no calorie info"].filter(Boolean).map(esc).join(" · ")}</span>
           <span>${chip(isFinite(fe) ? fe : null)}</span>
         </summary>
         <div class="inner">
@@ -481,6 +514,7 @@ function renderStock(){
             <button class="btn small danger" data-action="batch-del" data-id="${b.id}">Remove</button>
           </div>`).join("")}
           <div class="btnrow">
+            <button class="btn small" data-action="take-some" data-key="${esc(k)}">Take out…</button>
             <button class="btn small" data-action="add-batch" data-key="${esc(k)}">Add more</button>
             <button class="btn small" data-action="edit-product" data-key="${esc(k)}">Edit details</button>
           </div>
@@ -490,6 +524,7 @@ function renderStock(){
   }
   html += `<button class="btn" data-action="add-custom">Add an item without a barcode</button>`;
   $("#view-stock").innerHTML = html;
+  $("#stockSort").addEventListener("change", e => { S.settings.stockSort = e.target.value; save(); renderStock(); });
   const s = $("#stockSearch");
   s.addEventListener("input", () => { stockQuery = s.value; const pos = s.selectionStart; renderStock(); const n = $("#stockSearch"); n.focus(); n.setSelectionRange(pos,pos); });
   document.querySelectorAll("#view-stock details.item").forEach(d => d.addEventListener("toggle", () => { d.open ? openItems.add(d.dataset.key) : openItems.delete(d.dataset.key); }));
@@ -509,7 +544,7 @@ function renderWater(){
       <div class="batch"><span class="stepper"><button data-action="water-dec" data-id="${w.id}" aria-label="One fewer">−</button><span>${fmt(num(w.qty),2)}</span><button data-action="water-inc" data-id="${w.id}" aria-label="One more">+</button></span>
         <span class="grow"></span><button class="btn small" data-action="edit-water" data-id="${w.id}">Edit</button></div>
     </div>`).join("")}</div>`;
-  html += `<button class="btn primary" data-action="add-water">Add water</button>
+  html += `<div class="btnrow"><button class="btn primary" data-action="cam-water">Scan bottled water</button><button class="btn" data-action="add-water">Add by hand</button></div>
     <p class="muted small" style="margin:0">Need per person: ${fmt(num(S.settings.waterL),1)} L a day for drinking and basic hygiene. Change it in Settings.</p>`;
   $("#view-water").innerHTML = html;
 }
@@ -553,6 +588,55 @@ function confirmSheet(title, text, yesLabel, onYes){
   });
 }
 
+/* ---------- day / month / year picker ---------- */
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const lastDay = (y, m) => new Date(y, m, 0).getDate();
+function dateField(id, iso, label){
+  let d = "", m = "", y = "";
+  if(iso){ const p = iso.split("-"); y = +p[0]; m = +p[1]; d = +p[2]; }
+  const now = new Date().getFullYear(), years = [];
+  for(let i = now - 2; i <= now + 12; i++) years.push(i);
+  if(y && !years.includes(y)){ years.push(y); years.sort((a,b) => a - b); }
+  const opt = (v, t, sel) => `<option value="${v}"${String(v) === String(sel) ? " selected" : ""}>${t}</option>`;
+  return `<div class="f"><span>${esc(label)}</span>
+    <div class="dsel" id="${id}">
+      <select data-p="d" aria-label="Day">${opt("", "Day", d)}${Array.from({length:31}, (_, i) => opt(i+1, i+1, d)).join("")}</select>
+      <select data-p="m" aria-label="Month">${opt("", "Month", m)}${MONTHS.map((n, i) => opt(i+1, n, m)).join("")}</select>
+      <select data-p="y" aria-label="Year">${opt("", "Year", y)}${years.map(v => opt(v, v, y)).join("")}</select>
+    </div>
+    <div class="quick"><button type="button" data-dq="6">+6 months</button><button type="button" data-dq="12">+1 year</button><button type="button" data-dq="24">+2 years</button><button type="button" data-dq="0">No date</button></div>
+    <span class="dhint muted small" id="${id}_hint"></span></div>`;
+}
+function readDate(root, id){
+  const box = root.querySelector("#" + id);
+  const y = +box.querySelector("[data-p=y]").value; if(!y) return null;
+  const m = +box.querySelector("[data-p=m]").value || 12;
+  const d = Math.min(+box.querySelector("[data-p=d]").value || lastDay(y, m), lastDay(y, m));
+  return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+}
+function setDate(root, id, iso){
+  const box = root.querySelector("#" + id), p = iso ? iso.split("-").map(Number) : [];
+  box.querySelector("[data-p=y]").value = p[0] ? String(p[0]) : "";
+  box.querySelector("[data-p=m]").value = p[1] ? String(p[1]) : "";
+  box.querySelector("[data-p=d]").value = p[2] ? String(p[2]) : "";
+  dateHint(root, id);
+}
+function dateHint(root, id){
+  const box = root.querySelector("#" + id);
+  const y = box.querySelector("[data-p=y]").value, m = box.querySelector("[data-p=m]").value, d = box.querySelector("[data-p=d]").value;
+  const iso = readDate(root, id);
+  let t;
+  if(!iso) t = (m || d) ? "Pick a year to set the date." : "No date set.";
+  else t = (d ? niceDate(iso) : m ? `End of ${MONTHS[+m - 1]} ${y}` : `End of ${y}`) + " · " + whenText(daysUntil(iso));
+  root.querySelector("#" + id + "_hint").textContent = t;
+}
+function initDate(root, id){
+  const box = root.querySelector("#" + id);
+  box.querySelectorAll("select").forEach(el => el.addEventListener("change", () => dateHint(root, id)));
+  box.parentNode.querySelectorAll("[data-dq]").forEach(b => b.onclick = () => setDate(root, id, b.dataset.dq === "0" ? null : addMonths(+b.dataset.dq)));
+  dateHint(root, id);
+}
+
 const N100 = [["kcal","Energy","kcal"],["protein","Protein","g"],["carbs","Carbs","g"],["fat","Fat","g"],["fibre","Fibre","g"],["sugar","Sugars","g"],["salt","Salt","g"]];
 
 function productSheet({ key, product, note, noteWarn, withBatch, title }){
@@ -571,11 +655,8 @@ function productSheet({ key, product, note, noteWarn, withBatch, title }){
       <div class="calc" id="p_calc"></div>
     </fieldset>
     ${withBatch ? `<fieldset><legend>Adding to stock</legend>
-      <div class="grid2">
-        <label class="f">How many packs<input type="number" inputmode="decimal" step="any" min="0" id="b_qty" value="1"></label>
-        <label class="f">Best before<input type="date" id="b_exp"></label>
-      </div>
-      <div class="quick"><button type="button" data-m="6">+6 months</button><button type="button" data-m="12">+1 year</button><button type="button" data-m="24">+2 years</button><button type="button" data-m="0">No date</button></div>
+      <label class="f">How many packs<input type="number" inputmode="decimal" step="any" min="0" id="b_qty" value="1"></label>
+      ${dateField("b_exp", null, "Best before")}
     </fieldset>` : ""}
     <div class="btnrow"><button type="button" class="btn" id="p_cancel">Cancel</button><button type="submit" class="btn primary">${withBatch ? "Add to stock" : "Save"}</button></div>
   </form>`, s => {
@@ -584,7 +665,7 @@ function productSheet({ key, product, note, noteWarn, withBatch, title }){
       s.querySelector("#p_calc").textContent = (k != null && g != null) ? `${fmt(k*g/100)} kcal per pack` : "Enter pack size and kcal to count this item.";
     };
     s.querySelectorAll("#p_kcal,#p_unit").forEach(i => i.addEventListener("input", calc)); calc();
-    s.querySelectorAll(".quick button").forEach(b => b.onclick = () => { s.querySelector("#b_exp").value = b.dataset.m === "0" ? "" : addMonths(+b.dataset.m); });
+    if(withBatch) initDate(s, "b_exp");
     s.querySelector("#p_cancel").onclick = closeSheet;
     s.querySelector("#pform").onsubmit = e => {
       e.preventDefault();
@@ -598,7 +679,7 @@ function productSheet({ key, product, note, noteWarn, withBatch, title }){
       let msg = "Saved";
       if(withBatch){
         const qty = num(s.querySelector("#b_qty").value) || 0;
-        const exp = s.querySelector("#b_exp").value || null;
+        const exp = readDate(s, "b_exp");
         if(qty > 0){
           const same = S.batches.find(b => b.key === k && (b.expiry || null) === exp);
           if(same) same.qty += qty; else S.batches.push({ id: uid(), key: k, qty, expiry: exp, added: new Date().toISOString() });
@@ -611,30 +692,35 @@ function productSheet({ key, product, note, noteWarn, withBatch, title }){
   });
 }
 
-function waterSheet(w){
-  const isNew = !w; w = w || { label:"", litres:"", qty:1, expiry:"" };
+function waterSheet(w, preset, note, warn){
+  const isNew = !w;
+  w = w || Object.assign({ label:"", litres:"", qty:1, expiry:null, code:null }, preset || {});
   openSheet(`<form id="wform" autocomplete="off">
-    <h3>${isNew ? "Add water" : "Edit water"}</h3>
+    <div><h3>${isNew ? "Add water" : "Edit water"}</h3>${w.code ? `<div class="code">${esc(w.code)}</div>` : ""}</div>
+    ${note ? `<div class="note ${warn ? "warn" : ""}">${esc(note)}</div>` : ""}
     <label class="f">Description<input type="text" id="w_label" value="${esc(w.label)}" placeholder="e.g. 2 L bottled water"></label>
     <div class="grid2">
       <label class="f">Litres per container<input type="number" inputmode="decimal" step="any" min="0" id="w_l" value="${esc(w.litres)}" required></label>
       <label class="f">How many<input type="number" inputmode="decimal" step="any" min="0" id="w_q" value="${esc(w.qty)}" required></label>
     </div>
-    <label class="f">Best before or refresh date<input type="date" id="w_exp" value="${esc(w.expiry || "")}"></label>
-    <div class="quick"><button type="button" data-m="6">+6 months</button><button type="button" data-m="12">+1 year</button><button type="button" data-m="24">+2 years</button></div>
+    ${dateField("w_exp", w.expiry, "Best before or refresh date")}
     <p class="muted small" style="margin:0">Tap water you store yourself is usually refreshed every 6 months.</p>
     <div class="btnrow">${isNew ? "" : `<button type="button" class="btn danger" id="w_del">Delete</button>`}<button type="button" class="btn" id="w_cancel">Cancel</button><button type="submit" class="btn primary">Save</button></div>
   </form>`, s => {
-    s.querySelectorAll(".quick button").forEach(b => b.onclick = () => { s.querySelector("#w_exp").value = addMonths(+b.dataset.m); });
+    initDate(s, "w_exp");
     s.querySelector("#w_cancel").onclick = closeSheet;
     const del = s.querySelector("#w_del");
     if(del) del.onclick = () => confirmSheet("Delete this water?", `${w.label || "This entry"} will be removed from your stock.`, "Delete", () => { S.water = S.water.filter(x => x.id !== w.id); save(); render(); toast("Deleted"); });
     s.querySelector("#wform").onsubmit = e => {
       e.preventDefault();
-      const rec = { id: w.id || uid(), label: s.querySelector("#w_label").value.trim(), litres: num(s.querySelector("#w_l").value) || 0,
-        qty: num(s.querySelector("#w_q").value) || 0, expiry: s.querySelector("#w_exp").value || null };
-      if(isNew) S.water.push(rec); else S.water = S.water.map(x => x.id === rec.id ? rec : x);
-      save(); closeSheet(); render(); toast("Water saved");
+      const rec = { id: w.id || uid(), code: w.code || null, label: s.querySelector("#w_label").value.trim(), litres: num(s.querySelector("#w_l").value) || 0,
+        qty: num(s.querySelector("#w_q").value) || 0, expiry: readDate(s, "w_exp") };
+      if(rec.code) S.waterProducts[rec.code] = { label: rec.label, litres: rec.litres };
+      if(isNew){
+        const same = rec.code && S.water.find(x => x.code === rec.code && (x.expiry || null) === rec.expiry);
+        if(same) same.qty = (num(same.qty) || 0) + rec.qty; else S.water.push(rec);
+      } else S.water = S.water.map(x => x.id === rec.id ? rec : x);
+      save(); closeSheet(); render(); toast(isNew ? `Added ${fmt(rec.qty, 2)} × ${rec.label || "water"}` : "Water saved");
     };
   });
 }
@@ -690,6 +776,8 @@ function settingsSheet(){
       <label class="f">"Eat now" warning (days)<input type="number" inputmode="numeric" min="1" id="s_u" value="${esc(st.urgentDays)}"></label>
       <label class="f">"Use soon" warning (days)<input type="number" inputmode="numeric" min="1" id="s_s" value="${esc(st.soonDays)}"></label>
     </div>
+    <label class="f">Supply goal (days)<input type="number" inputmode="numeric" min="1" id="s_g" value="${esc(st.goalDays)}"></label>
+    <label class="check"><input type="checkbox" id="s_snd"${st.sound ? " checked" : ""}> Beep when a barcode scans</label>
     <button type="submit" class="btn primary">Save settings</button>
     <fieldset><legend>Backup</legend>
       <p class="muted small" style="margin:0">Your data is stored on this device only. Export a backup now and then, and use it to move everything to another device.</p>
@@ -704,6 +792,8 @@ function settingsSheet(){
       st.waterL = num(g("#s_w").value) || 3; st.ration = num(g("#s_r").value) || 100;
       st.urgentDays = Math.max(1, Math.round(num(g("#s_u").value) || 30));
       st.soonDays = Math.max(st.urgentDays, Math.round(num(g("#s_s").value) || 90));
+      st.goalDays = Math.max(1, Math.round(num(g("#s_g").value) || 14));
+      st.sound = g("#s_snd").checked;
       save(); closeSheet(); render(); toast("Settings saved");
     };
     g("#s_exp").onclick = exportData;
@@ -740,6 +830,9 @@ $("#importFile").addEventListener("change", e => {
 let toastTimer;
 function toast(msg, undo){
   const t = $("#toast");
+  const camEl = document.getElementById("cam");
+  const host = sheet.open ? sheet : camEl.open ? camEl : document.body;
+  if(t.parentNode !== host) host.appendChild(t);
   t.innerHTML = `<span>${esc(msg)}</span>` + (undo ? `<button type="button">Undo</button>` : "");
   t.hidden = false;
   if(undo) t.querySelector("button").onclick = () => { undo(); t.hidden = true; };
@@ -747,51 +840,96 @@ function toast(msg, undo){
 }
 function snapshotUndo(){ const snap = JSON.stringify({ b:S.batches, w:S.water }); return () => { const o = JSON.parse(snap); S.batches = o.b; S.water = o.w; save(); render(); toast("Undone"); }; }
 
-/* ---------- scanning ---------- */
-let mode = "in";
-let scanner = null, camOn = false, busy = false, lastCode = "", lastAt = 0;
-document.querySelectorAll("#modeSeg button").forEach(b => b.addEventListener("click", () => {
-  mode = b.dataset.mode;
-  document.querySelectorAll("#modeSeg button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
-  $("#modeSeg").classList.toggle("out", mode === "out");
-  $("#scanHint").textContent = mode === "out"
-    ? "Take out mode: each scan removes one pack, using the oldest date first."
-    : "Point the camera at a barcode. A USB scanner can type into the box below.";
-}));
+/* ---------- sound ---------- */
+let actx = null;
+function unlockAudio(){
+  try{
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    if(actx.state === "suspended") actx.resume();
+  }catch(e){}
+}
+function beep(ok = true){
+  if(!S.settings.sound) return;
+  try{
+    unlockAudio(); if(!actx) return;
+    const t = actx.currentTime, o = actx.createOscillator(), g = actx.createGain();
+    const len = ok ? 0.11 : 0.28;
+    o.type = ok ? "sine" : "square";
+    o.frequency.setValueAtTime(ok ? 1950 : 220, t);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(ok ? 0.3 : 0.12, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+    o.connect(g); g.connect(actx.destination);
+    o.start(t); o.stop(t + len + 0.02);
+  }catch(e){}
+}
 
+/* ---------- scanning ---------- */
+const cam = $("#cam");
+const CAM_TEXT = {
+  in:    ["Add stock", "Scan each item. Its details open so you can set how many and the date."],
+  out:   ["Take out", "Scan an item, then take out a whole pack or enter an amount."],
+  water: ["Add water", "Scan bottled water to add it to your water store."]
+};
+let camMode = "in", typedMode = "in";
+let scanner = null, camOn = false, busy = false, lastCode = "", lastAt = 0;
+
+async function openCam(m){
+  camMode = m;
+  unlockAudio();
+  $("#camTitle").textContent = CAM_TEXT[m][0];
+  $("#camHint").textContent = CAM_TEXT[m][1];
+  cam.classList.toggle("out", m === "out");
+  if(!cam.open) cam.showModal();
+  await startCamera();
+}
 async function startCamera(){
-  if(typeof Html5Qrcode === "undefined"){ toast("The scanner couldn't load. Check your internet connection."); return; }
+  if(camOn) return;
+  if(typeof Html5Qrcode === "undefined"){ $("#camHint").textContent = "The camera scanner couldn't load. Check your internet connection, or type the barcode below."; return; }
   try{
     const F = Html5QrcodeSupportedFormats;
     scanner = scanner || new Html5Qrcode("reader", { formatsToSupport:[F.EAN_13,F.EAN_8,F.UPC_A,F.UPC_E,F.CODE_128], useBarCodeDetectorIfSupported:true, verbose:false });
     await scanner.start({ facingMode:"environment" },
       { fps:10, qrbox:(w,h) => ({ width:Math.floor(Math.min(w*0.85, 360)), height:Math.floor(Math.min(h*0.45, 160)) }) },
       onScan, () => {});
-    camOn = true; $("#camStart").hidden = true; $("#camStop").hidden = false;
+    camOn = true;
   }catch(err){
-    toast("Couldn't open the camera. Allow camera access, and make sure the page is opened over https.");
+    $("#camHint").textContent = "Couldn't open the camera. Allow camera access for this site in your browser settings, or type the barcode below.";
   }
 }
 async function stopCamera(){
   if(scanner && camOn){ try{ await scanner.stop(); }catch(e){} }
-  camOn = false; $("#camStart").hidden = false; $("#camStop").hidden = true;
+  camOn = false;
 }
 function pauseCam(){ try{ if(camOn) scanner.pause(true); }catch(e){} }
 function resumeCam(){ try{ if(camOn) scanner.resume(); }catch(e){} }
-$("#camStart").onclick = startCamera;
-$("#camStop").onclick = stopCamera;
+cam.addEventListener("close", () => { stopCamera(); });
+cam.addEventListener("click", e => { if(e.target === cam) cam.close(); });
+$("#camClose").onclick = () => cam.close();
+$("#camCodeForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const v = $("#camCode").value; $("#camCode").value = "";
+  if(v.trim()) handleCode(v, camMode);
+});
 
 function onScan(text){
   const now = Date.now();
   if(busy || (text === lastCode && now - lastAt < 2500)) return;
   lastCode = text; lastAt = now;
+  beep(true);
   if(navigator.vibrate) navigator.vibrate(40);
-  handleCode(text);
+  handleCode(text, camMode);
 }
+
+document.querySelectorAll("#modeSeg button").forEach(b => b.addEventListener("click", () => {
+  typedMode = b.dataset.mode;
+  document.querySelectorAll("#modeSeg button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  $("#modeSeg").classList.toggle("out", typedMode === "out");
+}));
 $("#codeForm").addEventListener("submit", e => {
   e.preventDefault();
   const v = $("#codeInput").value; $("#codeInput").value = "";
-  if(v.trim()) handleCode(v);
+  if(v.trim()) handleCode(v, typedMode);
 });
 
 async function lookup(code){
@@ -814,12 +952,14 @@ async function lookup(code){
   finally{ clearTimeout(tm); }
 }
 
-async function handleCode(raw){
+function startBusy(){ busy = true; pauseCam(); onSheetClose = () => { busy = false; resumeCam(); }; }
+
+async function handleCode(raw, m){
   const code = String(raw).replace(/\s+/g, "");
-  if(!/^\d{6,14}$/.test(code)){ toast("That doesn't look like a product barcode."); return; }
-  if(mode === "out"){ takeOut(code); return; }
-  busy = true; pauseCam();
-  onSheetClose = () => { busy = false; resumeCam(); };
+  if(!/^\d{6,14}$/.test(code)){ beep(false); toast("That doesn't look like a product barcode."); return; }
+  if(m === "out"){ takeOutByCode(code); return; }
+  if(m === "water" || (S.waterProducts[code] && !S.products[code])){ waterScan(code); return; }
+  startBusy();
   const known = S.products[code];
   if(known){
     productSheet({ key:code, product:known, title:"Add to stock", withBatch:true, note:"You've stocked this before." });
@@ -838,17 +978,97 @@ async function handleCode(raw){
   }
 }
 
-function takeOut(code){
-  const p = S.products[code];
-  const bs = S.batches.filter(b => b.key === code && b.qty > 0).sort((a,b) => (daysUntil(a.expiry) ?? 1e9) - (daysUntil(b.expiry) ?? 1e9));
-  if(!bs.length){ toast(p ? `No ${p.name || "stock"} left to take out.` : "That item isn't in your stock."); return; }
-  const undo = snapshotUndo();
-  const b = bs[0];
-  b.qty = Math.max(0, Math.round((b.qty - 1) * 100) / 100);
-  if(b.qty <= 0) S.batches = S.batches.filter(x => x.id !== b.id);
-  save();
-  const left = S.batches.filter(x => x.key === code).reduce((a,x) => a + x.qty, 0);
-  toast(`Took out 1 × ${p?.name || "item"}. ${fmt(left,2)} left.`, undo);
+async function waterScan(code){
+  startBusy();
+  const known = S.waterProducts[code];
+  if(known){ waterSheet(null, { code, label: known.label, litres: known.litres, qty: 1 }, "You've stocked this water before."); return; }
+  openSheet(`<div class="body"><h3>Looking up ${esc(code)}…</h3><p class="muted" style="margin:0">Checking Open Food Facts.</p></div>`);
+  const res = await lookup(code);
+  if(!sheet.open) return;
+  if(res.status === "found"){
+    const pr = res.product;
+    const litres = pr.unitG ? Math.round(pr.unitG) / 1000 : "";
+    const label = [pr.brand, pr.name].filter(Boolean).join(" ");
+    waterSheet(null, { code, label, litres, qty: 1 },
+      litres ? "Found on Open Food Facts. Check the bottle size looks right." : "Found it, but the bottle size is missing. Enter the litres from the label.", !litres);
+  } else {
+    waterSheet(null, { code, label: "", litres: "", qty: 1 },
+      res.status === "missing" ? "Not found in Open Food Facts. Enter the details once and Stockist will remember this water." : "Couldn't reach Open Food Facts. Enter the details from the label.", true);
+  }
+}
+
+/* ---------- taking out ---------- */
+const byExpiry = (a, b) => (daysUntil(a.expiry) ?? 1e9) - (daysUntil(b.expiry) ?? 1e9);
+const r3 = x => Math.round(x * 1000) / 1000;
+function foodBatches(key){ return S.batches.filter(b => b.key === key && b.qty > 0).sort(byExpiry); }
+function waterFor(code){ return S.water.filter(w => w.code === code && num(w.qty) > 0).sort(byExpiry); }
+
+function takeOutByCode(code){
+  if(foodBatches(code).length){ startBusy(); takeOutFood(code); return; }
+  if(waterFor(code).length){ startBusy(); takeOutWater(code); return; }
+  beep(false);
+  const p = S.products[code] || S.waterProducts[code];
+  toast(p ? `No ${p.name || p.label || "stock"} left to take out.` : "That item isn't in your stock.");
+}
+
+function takeOutFood(key){
+  const p = S.products[key] || {};
+  const bs = foodBatches(key);
+  if(!bs.length) return;
+  const total = bs.reduce((a, b) => a + b.qty, 0);
+  amountSheet({ name: p.name || "Unnamed item", total, packWord: "pack", size: num(p.unitG), litres: false, oldest: bs[0].expiry,
+    take: packs => {
+      const undo = snapshotUndo(); let left = packs;
+      for(const b of bs){ const t = Math.min(b.qty, left); b.qty = r3(b.qty - t); left = r3(left - t); if(left <= 0) break; }
+      S.batches = S.batches.filter(b => b.qty > 0.0005);
+      save(); render();
+      const now = S.batches.filter(b => b.key === key).reduce((a, b) => a + b.qty, 0);
+      toast(`Took out ${fmt(packs, 2)} × ${p.name || "item"}. ${fmt(now, 2)} left.`, undo);
+    }});
+}
+function takeOutWater(code){
+  const ws = waterFor(code);
+  const total = ws.reduce((a, w) => a + num(w.qty), 0);
+  const name = ws[0].label || "Water";
+  amountSheet({ name, total, packWord: "container", size: num(ws[0].litres), litres: true, oldest: ws[0].expiry,
+    take: n => {
+      const undo = snapshotUndo(); let left = n;
+      for(const w of ws){ const t = Math.min(num(w.qty), left); w.qty = r3(num(w.qty) - t); left = r3(left - t); if(left <= 0) break; }
+      S.water = S.water.filter(w => num(w.qty) > 0.0005);
+      save(); render();
+      const now = waterFor(code).reduce((a, w) => a + num(w.qty), 0);
+      toast(`Took out ${fmt(n, 2)} × ${name}. ${fmt(now, 2)} left.`, undo);
+    }});
+}
+
+function amountSheet({ name, total, packWord, size, litres, oldest, take }){
+  const plural = n => packWord + (n === 1 ? "" : "s");
+  const sizeText = size ? (litres ? `${fmt(size, 2)} L` : `${fmt(size)} g/ml`) : "";
+  openSheet(`<form id="tform" autocomplete="off">
+    <div><h3>Take out</h3><div class="muted">${esc(name)}</div></div>
+    <div class="note">You have ${fmt(total, 2)} ${plural(total)}${sizeText ? ` of ${sizeText}` : ""}. The oldest date is used first${oldest ? ` (${esc(niceDate(oldest))})` : ""}.</div>
+    <button type="button" class="btn out" id="t_one">${total >= 1 ? `Take out 1 whole ${packWord}` : `Take out the rest (${fmt(total, 2)})`}</button>
+    <fieldset><legend>Or take out part</legend>
+      <div class="grid2">
+        <label class="f">Amount<input type="number" inputmode="decimal" step="any" min="0" id="t_amt" placeholder="${size && !litres ? "e.g. 250" : "e.g. 0.5"}"></label>
+        <label class="f">Unit<select id="t_unit">${size ? `<option value="size">${litres ? "litres" : "g or ml"}</option>` : ""}<option value="pack">${packWord}s</option></select></label>
+      </div>
+      <div class="calc" id="t_calc"></div>
+      <button type="submit" class="btn">Take out this amount</button>
+    </fieldset>
+    <button type="button" class="btn ghost" id="t_cancel">Cancel</button>
+  </form>`, s => {
+    const g = id => s.querySelector(id);
+    const packs = () => { const a = num(g("#t_amt").value); if(a == null || a <= 0) return null; return g("#t_unit").value === "size" ? a / size : a; };
+    const calc = () => {
+      const p = packs();
+      g("#t_calc").textContent = p == null ? "" : p > total + 1e-9 ? `That's more than you have (${fmt(total, 2)} ${plural(total)}).` : `That's ${fmt(p, 2)} ${plural(p)}.`;
+    };
+    g("#t_amt").addEventListener("input", calc); g("#t_unit").addEventListener("change", calc);
+    g("#t_one").onclick = () => { closeSheet(); take(Math.min(1, total)); };
+    g("#t_cancel").onclick = closeSheet;
+    g("#tform").onsubmit = e => { e.preventDefault(); const p = packs(); if(p == null){ g("#t_amt").focus(); return; } closeSheet(); take(Math.min(p, total)); };
+  });
 }
 
 /* ---------- global actions ---------- */
@@ -871,6 +1091,10 @@ document.addEventListener("click", e => {
     case "edit-water": waterSheet(water); break;
     case "water-inc": water.qty = (num(water.qty)||0) + 1; save(); render(); break;
     case "water-dec": { const u = snapshotUndo(); water.qty = Math.max(0, (num(water.qty)||0) - 1); save(); render(); toast(`${water.label || "Water"}: ${fmt(water.qty,2)} left`, u); break; }
+    case "cam-in": openCam("in"); break;
+    case "cam-out": openCam("out"); break;
+    case "cam-water": openCam("water"); break;
+    case "take-some": takeOutFood(key); break;
     case "add-custom": productSheet({ key:null, product:null, title:"Add an item", withBatch:true }); break;
     case "add-batch": productSheet({ key, product:S.products[key], title:"Add more", withBatch:true }); break;
     case "edit-product": productSheet({ key, product:S.products[key], title:"Edit details", withBatch:false }); break;
