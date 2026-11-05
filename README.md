@@ -4,16 +4,18 @@ A simple, phone-first app for keeping track of an emergency pantry and water sup
 
 Scan barcodes to add food, record expiry dates, and see at a glance how many days your supplies would last your household.
 
-Current version: v0.1
+Current version: v0.2
 
 Features
-Barcode scanning with your phone camera. A USB barcode scanner also works by typing into the barcode box.
+Barcode scanning with your phone camera, with a beep on each scan. A USB barcode scanner also works by typing into the barcode box.
 Product lookup from Open Food Facts. Items it doesn't know can be entered by hand once and are remembered after that.
 Household setup: add each person's age, sex and activity level to get daily calorie estimates based on UK reference values. Pets count towards water needs.
-Days of supply: total calories and litres of water in stock, and how long they would last.
-Water tracking: containers, litres and refresh dates.
+Days of supply: total calories and litres of water in stock, how long they would last, and progress towards a supply goal (14 days by default).
+Water tracking: scan bottled water or add containers by hand, with litres and refresh dates.
 Expiry alerts: items are flagged as eat now (30 days) or use soon (90 days). Both periods can be changed.
-Take out mode: scan an item to remove one, oldest date first, with undo.
+Take out mode: scan an item and take out a whole pack or a set amount (grams, litres or part of a pack), oldest date first, with undo.
+Stock sorting by expiry date, name or calorie density.
+Quick date entry with day, month and year pickers. Leave the day blank for "best before end of" dates.
 Reduced rations setting: plan at, say, 75% of normal calories.
 Backup export and import: save your data to a file or move it to another device.
 Using it
